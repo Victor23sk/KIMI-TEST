@@ -6,6 +6,9 @@ void main() {
   testWidgets('Palazzo splash shows brand', (tester) async {
     await tester.pumpWidget(const PalazzoApp());
     expect(find.text(S.appName), findsWidgets);
-    await tester.pump(const Duration(seconds: 2));
+    // Advance past splash navigation timer.
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Агент'), findsWidgets);
   });
 }

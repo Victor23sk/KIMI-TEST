@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/l10n/app_strings.dart';
+import '../../core/theme/app_theme.dart';
 import '../../models/apartment.dart';
 import 'apartment_swipe_card.dart';
 import 'reject_reason_sheet.dart';
@@ -48,34 +49,45 @@ class _SwipeDeckState extends State<SwipeDeck> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
     if (_deck.isEmpty) {
       return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.check_circle_outline,
-                size: 48, color: Theme.of(context).colorScheme.primary),
-            const SizedBox(height: 12),
-            Text(
-              'Колода пуста — уточните фильтры у агента',
-              style: Theme.of(context).textTheme.titleMedium,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            FilledButton.tonal(
-              onPressed: () => setState(() => _deck = List.of(ApartmentPreview.demos)),
-              child: const Text('Показать снова'),
-            ),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.check_circle_outline_rounded, size: 56, color: cs.primary),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                'Колода пуста',
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'Уточните фильтры у агента или покажите карточки снова',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: cs.onSurfaceVariant,
+                    ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              FilledButton.tonal(
+                onPressed: () => setState(() => _deck = List.of(ApartmentPreview.demos)),
+                child: const Text('Показать снова'),
+              ),
+            ],
+          ),
         ),
       );
     }
 
     final top = _deck.first;
-    final cs = Theme.of(context).colorScheme;
+    final maxCardWidth = MediaQuery.sizeOf(context).width >= 700 ? 420.0 : double.infinity;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+      padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.sm, AppSpacing.md, AppSpacing.lg),
       child: Column(
         children: [
           Text(
@@ -84,53 +96,105 @@ class _SwipeDeckState extends State<SwipeDeck> {
                   color: cs.onSurfaceVariant,
                 ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.sm),
           Expanded(
-            child: GestureDetector(
-              onHorizontalDragUpdate: (d) => setState(() => _dragDx += d.delta.dx),
-              onHorizontalDragEnd: (d) {
-                if (_dragDx > 120) {
-                  _like(top);
-                } else if (_dragDx < -120) {
-                  _reject(top);
-                } else {
-                  setState(() => _dragDx = 0);
-                }
-              },
-              onTap: () => context.push('/app/apartment/${top.id}'),
-              child: Transform.translate(
-                offset: Offset(_dragDx, 0),
-                child: Transform.rotate(
-                  angle: _dragDx / 800,
-                  child: ApartmentSwipeCard(
-                    apartment: top,
-                    dragDx: _dragDx,
+            child: Center(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: maxCardWidth),
+                child: GestureDetector(
+                  onHorizontalDragUpdate: (d) => setState(() => _dragDx += d.delta.dx),
+                  onHorizontalDragEnd: (_) {
+                    if (_dragDx > 120) {
+                      _like(top);
+                    } else if (_dragDx < -120) {
+                      _reject(top);
+                    } else {
+                      setState(() => _dragDx = 0);
+                    }
+                  },
+                  onTap: () => context.push('/app/apartment/${top.id}'),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 60),
+                    curve: Curves.easeOut,
+                    child: Transform.translate(
+                      offset: Offset(_dragDx, 0),
+                      child: Transform.rotate(
+                        angle: _dragDx / 900,
+                        child: ApartmentSwipeCard(apartment: top, dragDx: _dragDx),
+                      ),
+                    ),
                   ),
                 ),
               ),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.md),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              FilledButton.tonalIcon(
-                onPressed: () => _reject(top),
-                icon: const Icon(Icons.close),
-                label: const Text('Нет'),
-                style: FilledButton.styleFrom(
-                  foregroundColor: cs.error,
-                ),
+              _RoundAction(
+                icon: Icons.close_rounded,
+                label: 'Нет',
+                color: cs.error,
+                bg: cs.errorContainer,
+                onTap: () => _reject(top),
               ),
-              FilledButton.icon(
-                onPressed: () => _like(top),
-                icon: const Icon(Icons.favorite_outline),
-                label: const Text('Да'),
+              const SizedBox(width: AppSpacing.xl),
+              _RoundAction(
+                icon: Icons.favorite_rounded,
+                label: 'Да',
+                color: cs.onPrimary,
+                bg: cs.primary,
+                large: true,
+                onTap: () => _like(top),
               ),
             ],
           ),
         ],
       ),
+    );
+  }
+}
+
+class _RoundAction extends StatelessWidget {
+  const _RoundAction({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.bg,
+    required this.onTap,
+    this.large = false,
+  });
+
+  final IconData icon;
+  final String label;
+  final Color color;
+  final Color bg;
+  final VoidCallback onTap;
+  final bool large;
+
+  @override
+  Widget build(BuildContext context) {
+    final size = large ? 68.0 : 56.0;
+    return Column(
+      children: [
+        Material(
+          color: bg,
+          shape: const CircleBorder(),
+          elevation: 0,
+          child: InkWell(
+            customBorder: const CircleBorder(),
+            onTap: onTap,
+            child: SizedBox(
+              width: size,
+              height: size,
+              child: Icon(icon, color: color, size: large ? 30 : 26),
+            ),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(label, style: Theme.of(context).textTheme.labelMedium),
+      ],
     );
   }
 }

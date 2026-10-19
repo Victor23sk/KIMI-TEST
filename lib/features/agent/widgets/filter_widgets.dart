@@ -1,29 +1,43 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/brand_mark.dart';
+
 class FilterSectionCard extends StatelessWidget {
-  const FilterSectionCard({super.key, required this.title, required this.child});
+  const FilterSectionCard({
+    super.key,
+    required this.title,
+    required this.child,
+    this.icon,
+  });
 
   final String title;
   final Widget child;
+  final IconData? icon;
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Material(
-        color: cs.surfaceContainerHighest.withValues(alpha: 0.45),
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(title, style: Theme.of(context).textTheme.titleSmall),
-              const SizedBox(height: 8),
-              child,
-            ],
-          ),
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      child: SurfaceCard(
+        padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+        color: cs.surfaceContainerLow,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                if (icon != null) ...[
+                  Icon(icon, size: 18, color: cs.primary),
+                  const SizedBox(width: 8),
+                ],
+                Text(title, style: Theme.of(context).textTheme.titleSmall),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            child,
+          ],
         ),
       ),
     );
@@ -47,7 +61,9 @@ class BudgetRangeFilter extends StatelessWidget {
       children: [
         Text(
           '${values.start.round()}–${values.end.round()} млн ₽',
-          style: Theme.of(context).textTheme.labelLarge,
+          style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                color: Theme.of(context).colorScheme.primary,
+              ),
         ),
         RangeSlider(
           values: values,
@@ -82,7 +98,9 @@ class AreaRangeFilter extends StatelessWidget {
       children: [
         Text(
           '${values.start.round()}–${values.end.round()} м²',
-          style: Theme.of(context).textTheme.labelLarge,
+          style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                color: Theme.of(context).colorScheme.primary,
+              ),
         ),
         RangeSlider(
           values: values,
@@ -115,12 +133,14 @@ class RoomsChipFilter extends StatelessWidget {
     const options = [0, 1, 2, 3, 4];
     return Wrap(
       spacing: 8,
+      runSpacing: 8,
       children: options.map((r) {
-        final label = r == 0 ? 'Студия' : '$r';
+        final label = r == 0 ? 'Студия' : '$r-комн.';
         final isOn = selected.contains(r);
         return FilterChip(
           label: Text(label),
           selected: isOn,
+          showCheckmark: false,
           onSelected: (v) {
             final next = Set<int>.from(selected);
             if (v) {
@@ -152,8 +172,10 @@ class MetroSliderFilter extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'до ${minutes.round()} мин',
-          style: Theme.of(context).textTheme.labelLarge,
+          'до ${minutes.round()} мин пешком',
+          style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                color: Theme.of(context).colorScheme.primary,
+              ),
         ),
         Slider(
           value: minutes,
@@ -178,7 +200,17 @@ class DistrictChipFilter extends StatelessWidget {
   final Set<String> selected;
   final ValueChanged<Set<String>> onChanged;
 
-  static const options = ['ЦАО', 'САО', 'СВАО', 'ВАО', 'ЮВАО', 'ЮАО', 'ЮЗАО', 'ЗАО', 'СЗАО'];
+  static const options = [
+    'ЦАО',
+    'САО',
+    'СВАО',
+    'ВАО',
+    'ЮВАО',
+    'ЮАО',
+    'ЮЗАО',
+    'ЗАО',
+    'СЗАО',
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -190,6 +222,7 @@ class DistrictChipFilter extends StatelessWidget {
         return FilterChip(
           label: Text(d),
           selected: isOn,
+          showCheckmark: false,
           onSelected: (v) {
             final next = Set<String>.from(selected);
             if (v) {
@@ -219,12 +252,16 @@ class FinishingSegmentFilter extends StatelessWidget {
   Widget build(BuildContext context) {
     return SegmentedButton<String>(
       segments: const [
-        ButtonSegment(value: 'none', label: Text('Без')),
+        ButtonSegment(value: 'none', label: Text('Без'), icon: Icon(Icons.crop_square_outlined, size: 16)),
         ButtonSegment(value: 'whitebox', label: Text('White box')),
         ButtonSegment(value: 'turnkey', label: Text('Под ключ')),
       ],
       selected: {value},
       onSelectionChanged: (s) => onChanged(s.first),
+      style: ButtonStyle(
+        visualDensity: VisualDensity.compact,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      ),
     );
   }
 }

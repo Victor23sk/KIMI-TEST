@@ -11,8 +11,7 @@ class SearchTab extends StatefulWidget {
   State<SearchTab> createState() => _SearchTabState();
 }
 
-class _SearchTabState extends State<SearchTab>
-    with SingleTickerProviderStateMixin {
+class _SearchTabState extends State<SearchTab> with SingleTickerProviderStateMixin {
   late final TabController _tabs;
 
   @override
@@ -31,13 +30,14 @@ class _SearchTabState extends State<SearchTab>
   Widget build(BuildContext context) {
     return NestedScrollView(
       headerSliverBuilder: (context, _) => [
-        SliverAppBar.large(
+        SliverAppBar.medium(
           title: const Text(S.tabSearch),
+          pinned: true,
           bottom: TabBar(
             controller: _tabs,
             tabs: const [
-              Tab(text: S.cards),
-              Tab(text: S.feed),
+              Tab(text: S.cards, icon: Icon(Icons.swipe_rounded)),
+              Tab(text: S.feed, icon: Icon(Icons.auto_stories_outlined)),
             ],
           ),
         ),

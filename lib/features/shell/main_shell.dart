@@ -28,6 +28,18 @@ class _MainShellState extends State<MainShell> {
         duration: const Duration(milliseconds: 280),
         switchInCurve: Curves.easeOutCubic,
         switchOutCurve: Curves.easeInCubic,
+        transitionBuilder: (child, anim) {
+          return FadeTransition(
+            opacity: anim,
+            child: SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(0.02, 0),
+                end: Offset.zero,
+              ).animate(anim),
+              child: child,
+            ),
+          );
+        },
         child: KeyedSubtree(
           key: ValueKey(_index),
           child: _tabs[_index],
@@ -39,17 +51,17 @@ class _MainShellState extends State<MainShell> {
         destinations: const [
           NavigationDestination(
             icon: Icon(Icons.forum_outlined),
-            selectedIcon: Icon(Icons.forum),
+            selectedIcon: Icon(Icons.forum_rounded),
             label: S.tabAgent,
           ),
           NavigationDestination(
             icon: Icon(Icons.apartment_outlined),
-            selectedIcon: Icon(Icons.apartment),
+            selectedIcon: Icon(Icons.apartment_rounded),
             label: S.tabSearch,
           ),
           NavigationDestination(
             icon: Icon(Icons.grid_view_outlined),
-            selectedIcon: Icon(Icons.grid_view),
+            selectedIcon: Icon(Icons.grid_view_rounded),
             label: S.tabServices,
           ),
         ],
