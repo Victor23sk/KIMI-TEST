@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
 
-/// Visual scoring ball. [score] null means formula TBD / not yet computed.
+/// Visual scoring ball = Traffic Quality Score (TQS 0–100).
 class ScoreBall extends StatelessWidget {
   const ScoreBall({super.key, this.score, this.size = 88});
 
+  /// Latest TQS; null only before first compute.
   final double? score;
   final double size;
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final label = score == null ? 'TBD' : score!.round().toString();
+    final label = score == null ? '—' : score!.round().toString();
 
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.9, end: 1),

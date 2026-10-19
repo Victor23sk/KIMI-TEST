@@ -85,7 +85,8 @@ class _AgentTabState extends State<AgentTab> {
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const ScoreBall(score: null), // TBD formula
+                    // Demo TQS ≈62 (warm band) until live aggregator wires up.
+                    const ScoreBall(score: 62),
                     const SizedBox(width: 16),
                     Expanded(
                       child: Column(
@@ -97,8 +98,15 @@ class _AgentTabState extends State<AgentTab> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            S.scoreTbd,
+                            S.scoreTqsHint,
                             style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: cs.onSurfaceVariant,
+                                ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '0.25·PCQS + 0.20·BPS + 0.35·OSAS + 0.20·LQS',
+                            style: Theme.of(context).textTheme.labelSmall?.copyWith(
                                   color: cs.onSurfaceVariant,
                                 ),
                           ),
@@ -111,9 +119,9 @@ class _AgentTabState extends State<AgentTab> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            '• Заполните цель и фильтры\n'
-                            '• Оценивайте квартиры с причиной\n'
-                            '• Веса событий — после файла скоринга',
+                            '• Цель и фильтры (PCQS / OSAS)\n'
+                            '• Планировки и избранное (+15 / +20 OSAS)\n'
+                            '• Конкретный ЖК в заявке (LQS до +30)',
                             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                   color: cs.onSurfaceVariant,
                                 ),
@@ -122,6 +130,13 @@ class _AgentTabState extends State<AgentTab> {
                       ),
                     ),
                   ],
+                ),
+                const SizedBox(height: 12),
+                _TqsComponentStrip(
+                  pcqs: 70,
+                  bpsQuality: 96,
+                  osas: 48,
+                  lqs: 40,
                 ),
                 const SizedBox(height: 20),
                 _ProbabilityDashboard(cs: cs),
@@ -228,6 +243,58 @@ class _AgentTabState extends State<AgentTab> {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _TqsComponentStrip extends StatelessWidget {
+  const _TqsComponentStrip({
+    required this.pcqs,
+    required this.bpsQuality,
+    required this.osas,
+    required this.lqs,
+  });
+
+  final double pcqs;
+  final double bpsQuality;
+  final double osas;
+  final double lqs;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final items = [
+      (S.scoreComponentPcqs, pcqs),
+      (S.scoreComponentBps, bpsQuality),
+      (S.scoreComponentOsas, osas),
+      (S.scoreComponentLqs, lqs),
+    ];
+    return Material(
+      color: cs.surfaceContainerHighest.withValues(alpha: 0.4),
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          children: items
+              .map(
+                (e) => Padding(
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(e.$1, style: Theme.of(context).textTheme.bodySmall),
+                      ),
+                      Text(
+                        e.$2.round().toString(),
+                        style: Theme.of(context).textTheme.labelLarge,
+                      ),
+                    ],
+                  ),
+                ),
+              )
+              .toList(),
+        ),
+      ),
     );
   }
 }

@@ -96,7 +96,9 @@ class ApartmentDetailScreen extends StatelessWidget {
                     onPressed: () {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text('${S.leaveLead} (заглушка) · шар оценки TBD'),
+                          content: Text(
+                            '${S.leaveLead} (заглушка) · TQS маршрутизация по бандам',
+                          ),
                         ),
                       );
                     },

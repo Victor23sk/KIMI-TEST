@@ -7,7 +7,7 @@ AI-first Flutter app for finding new-build apartments in Moscow.
 - Flutter 3.x + Material Design 3
 - Russian UI copy
 - `go_router` navigation
-- Scoring formula: **TBD** (`scoring_params.tbd.json`)
+- Scoring: **TQS** ball (`scoring_params.json`) — PCQS / BPS / OSAS / LQS from Yandex antifraud model
 
 ## Run
 

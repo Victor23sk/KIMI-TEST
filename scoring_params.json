@@ -1,0 +1,146 @@
+{
+  "version": "tqs-1.0.0",
+  "source": "Yandex Nedvizhimost Antifraud Retro 25-26 → Palazzo scoring ball",
+  "source_doc": "docs/scoring-model.md",
+  "score_min": 0,
+  "score_max": 100,
+  "formula": "TQS = 0.25*PCQS + 0.20*BPS_quality + 0.35*OSAS + 0.20*LQS",
+  "bps_quality": "100 * (1 - bot_probability)",
+  "tqs_weights": {
+    "pcqs": 0.25,
+    "bps_quality": 0.2,
+    "osas": 0.35,
+    "lqs": 0.2
+  },
+  "pcqs_weights": {
+    "query": 0.35,
+    "placement": 0.25,
+    "segment": 0.2,
+    "cpc_heat": 0.1,
+    "history": 0.1
+  },
+  "query_score_points": {
+    "commercial_verbs": 3,
+    "specific_zhk": 3,
+    "geo": 1,
+    "delivery": 1,
+    "finance": 1,
+    "unit_type": 1,
+    "info_penalty": -5,
+    "irrelevant_fixed": 0,
+    "min": 0,
+    "max": 10
+  },
+  "placement_scores": {
+    "search_paid": 10,
+    "retargeting": 7,
+    "maps": 5,
+    "telegram": 3,
+    "max": 3,
+    "programmatic": 2,
+    "organic": 6,
+    "unknown": 1
+  },
+  "osas": {
+    "behavior_cap": 60,
+    "audience_cap": 40,
+    "penalty_floor_contribution": -20,
+    "behavior_points": {
+      "gallery_3plus": 3,
+      "genplan": 3,
+      "rooms_select": 5,
+      "filters": 5,
+      "layout_list": 10,
+      "layout_card": 15,
+      "mortgage_calc": 10,
+      "location": 5,
+      "favorite": 20
+    },
+    "penalties": {
+      "zhk_hop_no_plans_gte5": -15,
+      "shallow_browse": -10,
+      "fast_bounce": -20
+    },
+    "audience_points": {
+      "mortgage_segment": 10,
+      "high_pay_ability": 10,
+      "geo_near_target": 15,
+      "life_event_move_repair": 10,
+      "family_fit": 5
+    }
+  },
+  "lqs": {
+    "completeness": {
+      "phone_name": 15,
+      "phone_only": 10,
+      "email_only": 5,
+      "disposable_email": 0
+    },
+    "channel_sql_pct": {
+      "gt_80": 25,
+      "50_80": 15,
+      "25_50": 5,
+      "lt_25_or_unknown": 0
+    },
+    "concreteness": {
+      "zhk_or_plan": 30,
+      "district_class_budget": 20,
+      "generic": 5
+    },
+    "maturity_days": {
+      "gt_14": 20,
+      "7_14": 15,
+      "1_7": 10,
+      "same_day": 5
+    },
+    "duplicate_24h_penalty": -20
+  },
+  "bps_block_threshold": 0.7,
+  "bands": [
+    {
+      "name": "hot",
+      "min": 80,
+      "max": 100,
+      "route": "crm_priority",
+      "actions": [
+        "Откройте планировку и добавьте в избранное",
+        "Оставьте заявку — высокий приоритет у застройщика"
+      ]
+    },
+    {
+      "name": "warm",
+      "min": 50,
+      "max": 79,
+      "route": "crm_nurture",
+      "actions": [
+        "Уточните ЖК и бюджет в фильтрах",
+        "Изучите 2–3 планировки перед заявкой"
+      ]
+    },
+    {
+      "name": "quarantine",
+      "min": 25,
+      "max": 49,
+      "route": "hold_24h",
+      "actions": [
+        "Подтвердите интерес (SMS / ответ агенту)",
+        "Избегайте хаотичного перебора ЖК без планировок"
+      ]
+    },
+    {
+      "name": "reject",
+      "min": 0,
+      "max": 24,
+      "route": "drop",
+      "actions": [
+        "Пройдите цель и фильтры с агентом",
+        "Откройте карточки планировок — так растёт OSAS"
+      ]
+    }
+  ],
+  "cta_unlocks": {
+    "mass_outreach_min_tqs": 50,
+    "priority_lead_min_tqs": 80
+  },
+  "notes": "Adapted from Yandex platform antifraud to Palazzo mobile scoring ball + lead routing. Audience Fit without Yandex ID uses first-party proxies until partner segments land."
+}

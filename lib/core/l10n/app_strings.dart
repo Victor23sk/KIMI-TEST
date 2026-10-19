@@ -42,8 +42,12 @@ abstract final class S {
   static const goalLiving = 'Жить';
   static const goalInvestor = 'Инвестировать';
   static const scoreBall = 'Шар оценки';
-  static const scoreTbd = 'Формула оценки — TBD';
+  static const scoreTqsHint = 'TQS · качество пути и заявки';
   static const raiseScore = 'Как повысить';
+  static const scoreComponentPcqs = 'Источник (PCQS)';
+  static const scoreComponentBps = 'Достоверность (BPS)';
+  static const scoreComponentOsas = 'Поведение (OSAS)';
+  static const scoreComponentLqs = 'Качество заявки (LQS)';
   static const probability = 'Вероятности по фильтрам';
   static const clearHistory = 'Очистить историю';
   static const newSearch = 'Новый поиск';
