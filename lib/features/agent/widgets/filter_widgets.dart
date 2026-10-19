@@ -49,10 +49,12 @@ class BudgetRangeFilter extends StatelessWidget {
     super.key,
     required this.values,
     required this.onChanged,
+    this.onChangeEnd,
   });
 
   final RangeValues values;
   final ValueChanged<RangeValues> onChanged;
+  final ValueChanged<RangeValues>? onChangeEnd;
 
   @override
   Widget build(BuildContext context) {
@@ -70,11 +72,9 @@ class BudgetRangeFilter extends StatelessWidget {
           min: 5,
           max: 80,
           divisions: 75,
-          labels: RangeLabels(
-            '${values.start.round()}',
-            '${values.end.round()}',
-          ),
+          labels: RangeLabels('${values.start.round()}', '${values.end.round()}'),
           onChanged: onChanged,
+          onChangeEnd: onChangeEnd,
         ),
       ],
     );
@@ -86,10 +86,12 @@ class AreaRangeFilter extends StatelessWidget {
     super.key,
     required this.values,
     required this.onChanged,
+    this.onChangeEnd,
   });
 
   final RangeValues values;
   final ValueChanged<RangeValues> onChanged;
+  final ValueChanged<RangeValues>? onChangeEnd;
 
   @override
   Widget build(BuildContext context) {
@@ -107,11 +109,9 @@ class AreaRangeFilter extends StatelessWidget {
           min: 20,
           max: 150,
           divisions: 130,
-          labels: RangeLabels(
-            '${values.start.round()}',
-            '${values.end.round()}',
-          ),
+          labels: RangeLabels('${values.start.round()}', '${values.end.round()}'),
           onChanged: onChanged,
+          onChangeEnd: onChangeEnd,
         ),
       ],
     );
@@ -136,10 +136,9 @@ class RoomsChipFilter extends StatelessWidget {
       runSpacing: 8,
       children: options.map((r) {
         final label = r == 0 ? 'Студия' : '$r-комн.';
-        final isOn = selected.contains(r);
         return FilterChip(
           label: Text(label),
-          selected: isOn,
+          selected: selected.contains(r),
           showCheckmark: false,
           onSelected: (v) {
             final next = Set<int>.from(selected);
@@ -161,10 +160,12 @@ class MetroSliderFilter extends StatelessWidget {
     super.key,
     required this.minutes,
     required this.onChanged,
+    this.onChangeEnd,
   });
 
   final double minutes;
   final ValueChanged<double> onChanged;
+  final ValueChanged<double>? onChangeEnd;
 
   @override
   Widget build(BuildContext context) {
@@ -184,6 +185,7 @@ class MetroSliderFilter extends StatelessWidget {
           divisions: 7,
           label: '${minutes.round()} мин',
           onChanged: onChanged,
+          onChangeEnd: onChangeEnd,
         ),
       ],
     );
@@ -200,17 +202,7 @@ class DistrictChipFilter extends StatelessWidget {
   final Set<String> selected;
   final ValueChanged<Set<String>> onChanged;
 
-  static const options = [
-    'ЦАО',
-    'САО',
-    'СВАО',
-    'ВАО',
-    'ЮВАО',
-    'ЮАО',
-    'ЮЗАО',
-    'ЗАО',
-    'СЗАО',
-  ];
+  static const options = ['ЦАО', 'САО', 'СВАО', 'ВАО', 'ЮВАО', 'ЮАО', 'ЮЗАО', 'ЗАО', 'СЗАО'];
 
   @override
   Widget build(BuildContext context) {
@@ -218,10 +210,9 @@ class DistrictChipFilter extends StatelessWidget {
       spacing: 8,
       runSpacing: 8,
       children: options.map((d) {
-        final isOn = selected.contains(d);
         return FilterChip(
           label: Text(d),
-          selected: isOn,
+          selected: selected.contains(d),
           showCheckmark: false,
           onSelected: (v) {
             final next = Set<String>.from(selected);
@@ -252,16 +243,12 @@ class FinishingSegmentFilter extends StatelessWidget {
   Widget build(BuildContext context) {
     return SegmentedButton<String>(
       segments: const [
-        ButtonSegment(value: 'none', label: Text('Без'), icon: Icon(Icons.crop_square_outlined, size: 16)),
+        ButtonSegment(value: 'none', label: Text('Без')),
         ButtonSegment(value: 'whitebox', label: Text('White box')),
         ButtonSegment(value: 'turnkey', label: Text('Под ключ')),
       ],
       selected: {value},
       onSelectionChanged: (s) => onChanged(s.first),
-      style: ButtonStyle(
-        visualDensity: VisualDensity.compact,
-        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      ),
     );
   }
 }

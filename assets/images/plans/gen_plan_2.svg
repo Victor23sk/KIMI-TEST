@@ -1,0 +1,13 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='900' viewBox='0 0 1200 900'>
+<rect width='1200' height='900' fill='#f7f3ff'/>
+<rect x='60' y='70' width='1080' height='760' fill='none' stroke='#4527A0' stroke-width='8'/>
+<line x1='420' y1='70' x2='420' y2='830' stroke='#4527A0' stroke-width='6'/>
+<line x1='780' y1='70' x2='780' y2='830' stroke='#4527A0' stroke-width='6'/>
+<line x1='420' y1='430' x2='780' y2='430' stroke='#4527A0' stroke-width='6'/>
+<text x='140' y='450' font-family='Arial' font-size='34' fill='#5E35B1'>Гостиная</text>
+<text x='500' y='280' font-family='Arial' font-size='34' fill='#5E35B1'>Кухня</text>
+<text x='500' y='650' font-family='Arial' font-size='34' fill='#5E35B1'>Спальня</text>
+<text x='880' y='450' font-family='Arial' font-size='34' fill='#5E35B1'>Детская</text>
+<text x='60' y='45' font-family='Arial' font-size='28' fill='#7E57C2'>Планировка · 58 м² · 2-комн.</text>
+</svg>

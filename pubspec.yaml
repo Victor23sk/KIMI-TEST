@@ -20,3 +20,7 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/images/plans/
+    - assets/images/zhk/
+    - assets/images/feed/

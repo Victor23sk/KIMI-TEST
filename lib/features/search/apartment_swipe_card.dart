@@ -4,15 +4,16 @@ import '../../core/l10n/app_strings.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/apartment.dart';
 
-/// Swipe card: floor-plan hero, price, area, ЖК name.
 class ApartmentSwipeCard extends StatelessWidget {
   const ApartmentSwipeCard({
     super.key,
     required this.apartment,
+    required this.matchPercent,
     this.dragDx = 0,
   });
 
   final ApartmentPreview apartment;
+  final int matchPercent;
   final double dragDx;
 
   @override
@@ -22,10 +23,9 @@ class ApartmentSwipeCard extends StatelessWidget {
     final nopeOpacity = (-dragDx / 120).clamp(0.0, 1.0);
 
     return Material(
-      elevation: 0,
+      color: cs.surfaceContainerLowest,
       borderRadius: BorderRadius.circular(AppRadii.xl),
       clipBehavior: Clip.antiAlias,
-      color: cs.surfaceContainerLowest,
       child: DecoratedBox(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(AppRadii.xl),
@@ -34,24 +34,11 @@ class ApartmentSwipeCard extends StatelessWidget {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    cs.primaryContainer,
-                    cs.surfaceContainer,
-                    cs.tertiaryContainer.withValues(alpha: 0.55),
-                  ],
-                ),
-              ),
-              child: CustomPaint(
-                painter: _FloorPlanPainter(
-                  wall: cs.onPrimaryContainer.withValues(alpha: 0.45),
-                  fill: cs.surface.withValues(alpha: 0.35),
-                ),
-              ),
+            // Floor plan as dominant hero.
+            Image.asset(
+              apartment.planAsset,
+              fit: BoxFit.cover,
+              errorBuilder: (_, _, _) => ColoredBox(color: cs.primaryContainer),
             ),
             Positioned(
               top: 16,
@@ -77,15 +64,10 @@ class ApartmentSwipeCard extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: cs.surface.withValues(alpha: 0.88),
+                    color: cs.surface.withValues(alpha: 0.9),
                     borderRadius: BorderRadius.circular(AppRadii.sm),
                   ),
-                  child: Text(
-                    'Планировка',
-                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                          color: cs.onSurfaceVariant,
-                        ),
-                  ),
+                  child: Text('Планировка', style: Theme.of(context).textTheme.labelLarge),
                 ),
               ),
             ),
@@ -100,12 +82,12 @@ class ApartmentSwipeCard extends StatelessWidget {
                     end: Alignment.bottomCenter,
                     colors: [
                       Colors.transparent,
-                      cs.surface.withValues(alpha: 0.96),
+                      cs.surface.withValues(alpha: 0.97),
                     ],
                   ),
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 56, 20, 20),
+                  padding: const EdgeInsets.fromLTRB(20, 48, 20, 20),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -116,25 +98,19 @@ class ApartmentSwipeCard extends StatelessWidget {
                           borderRadius: BorderRadius.circular(AppRadii.sm),
                         ),
                         child: Text(
-                          '${S.matchPercent}: ${apartment.matchPercent}%',
+                          '${S.matchPercent}: $matchPercent%',
                           style: Theme.of(context).textTheme.labelLarge?.copyWith(
                                 color: cs.onPrimaryContainer,
                               ),
                         ),
                       ),
                       const SizedBox(height: 10),
-                      Text(
-                        apartment.zhkName,
-                        style: Theme.of(context).textTheme.headlineSmall,
-                      ),
-                      const SizedBox(height: 6),
+                      Text(apartment.zhkName, style: Theme.of(context).textTheme.headlineSmall),
+                      const SizedBox(height: 4),
                       Text(
                         apartment.priceLabel,
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              color: cs.primary,
-                            ),
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(color: cs.primary),
                       ),
-                      const SizedBox(height: 4),
                       Text(
                         '${apartment.areaM2} ${S.m2} · '
                         '${apartment.rooms == 0 ? 'студия' : '${apartment.rooms}-комн.'} · '
@@ -157,7 +133,6 @@ class ApartmentSwipeCard extends StatelessWidget {
 
 class _Stamp extends StatelessWidget {
   const _Stamp({required this.label, required this.color});
-
   final String label;
   final Color color;
 
@@ -170,79 +145,16 @@ class _Stamp extends StatelessWidget {
         decoration: BoxDecoration(
           border: Border.all(color: color, width: 2.5),
           borderRadius: BorderRadius.circular(AppRadii.sm),
-          color: color.withValues(alpha: 0.08),
+          color: color.withValues(alpha: 0.1),
         ),
         child: Text(
           label,
           style: Theme.of(context).textTheme.labelLarge?.copyWith(
                 color: color,
                 fontWeight: FontWeight.w800,
-                letterSpacing: 0.6,
               ),
         ),
       ),
     );
   }
-}
-
-class _FloorPlanPainter extends CustomPainter {
-  _FloorPlanPainter({required this.wall, required this.fill});
-
-  final Color wall;
-  final Color fill;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = wall
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.4;
-    final fillPaint = Paint()
-      ..color = fill
-      ..style = PaintingStyle.fill;
-
-    final insetX = size.width * 0.14;
-    final insetY = size.height * 0.12;
-    final rect = Rect.fromLTWH(
-      insetX,
-      insetY,
-      size.width - insetX * 2,
-      size.height * 0.48,
-    );
-
-    final rrect = RRect.fromRectAndRadius(rect, const Radius.circular(10));
-    canvas.drawRRect(rrect, fillPaint);
-    canvas.drawRRect(rrect, paint);
-
-    // Rooms
-    canvas.drawLine(
-      Offset(rect.left + rect.width * 0.42, rect.top),
-      Offset(rect.left + rect.width * 0.42, rect.bottom),
-      paint,
-    );
-    canvas.drawLine(
-      Offset(rect.left, rect.top + rect.height * 0.52),
-      Offset(rect.left + rect.width * 0.42, rect.top + rect.height * 0.52),
-      paint,
-    );
-    canvas.drawLine(
-      Offset(rect.left + rect.width * 0.42, rect.top + rect.height * 0.38),
-      Offset(rect.right, rect.top + rect.height * 0.38),
-      paint,
-    );
-    // Door gaps suggestion
-    final door = Paint()
-      ..color = wall.withValues(alpha: 0.35)
-      ..strokeWidth = 6
-      ..strokeCap = StrokeCap.round;
-    canvas.drawLine(
-      Offset(rect.left + rect.width * 0.42, rect.top + rect.height * 0.62),
-      Offset(rect.left + rect.width * 0.42, rect.top + rect.height * 0.78),
-      door,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant _FloorPlanPainter oldDelegate) =>
-      oldDelegate.wall != wall || oldDelegate.fill != fill;
 }

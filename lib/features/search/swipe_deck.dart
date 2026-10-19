@@ -3,7 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/l10n/app_strings.dart';
 import '../../core/theme/app_theme.dart';
-import '../../models/apartment.dart';
+import '../../state/app_state.dart';
 import 'apartment_swipe_card.dart';
 import 'reject_reason_sheet.dart';
 
@@ -15,67 +15,30 @@ class SwipeDeck extends StatefulWidget {
 }
 
 class _SwipeDeckState extends State<SwipeDeck> {
-  late List<ApartmentPreview> _deck;
   double _dragDx = 0;
 
   @override
-  void initState() {
-    super.initState();
-    _deck = List.of(ApartmentPreview.demos);
-  }
-
-  Future<void> _reject(ApartmentPreview apt) async {
-    final reason = await showRejectReasonSheet(context);
-    if (!mounted) return;
-    setState(() {
-      _deck.removeWhere((a) => a.id == apt.id);
-      _dragDx = 0;
-    });
-    final label = reason ?? 'без причины';
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Отклонено: $label')),
-    );
-  }
-
-  void _like(ApartmentPreview apt) {
-    setState(() {
-      _deck.removeWhere((a) => a.id == apt.id);
-      _dragDx = 0;
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Сохранено: ${apt.zhkName}')),
-    );
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final state = AppScope.of(context);
+    final session = state.active;
+    final deck = session.filteredCatalog();
     final cs = Theme.of(context).colorScheme;
 
-    if (_deck.isEmpty) {
+    if (deck.isEmpty) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.lg),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.check_circle_outline_rounded, size: 56, color: cs.primary),
-              const SizedBox(height: AppSpacing.sm),
+              Icon(Icons.filter_alt_off_outlined, size: 48, color: cs.primary),
+              const SizedBox(height: 12),
+              Text('Нет лотов под фильтры', style: Theme.of(context).textTheme.headlineSmall),
+              const SizedBox(height: 8),
               Text(
-                'Колода пуста',
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-              const SizedBox(height: 6),
-              Text(
-                'Уточните фильтры у агента или покажите карточки снова',
+                'Ослабьте бюджет/комнаты у агента или очистите отклонения',
                 textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: cs.onSurfaceVariant,
-                    ),
-              ),
-              const SizedBox(height: AppSpacing.md),
-              FilledButton.tonal(
-                onPressed: () => setState(() => _deck = List.of(ApartmentPreview.demos)),
-                child: const Text('Показать снова'),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
               ),
             ],
           ),
@@ -83,44 +46,50 @@ class _SwipeDeckState extends State<SwipeDeck> {
       );
     }
 
-    final top = _deck.first;
-    final maxCardWidth = MediaQuery.sizeOf(context).width >= 700 ? 420.0 : double.infinity;
+    final top = deck.first;
+    final match = session.matchPercent(top);
+    final maxW = MediaQuery.sizeOf(context).width >= 700 ? 420.0 : double.infinity;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.sm, AppSpacing.md, AppSpacing.lg),
       child: Column(
         children: [
           Text(
-            S.swipeHint,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: cs.onSurfaceVariant,
-                ),
+            '${S.swipeHint} · ${session.title} · ${deck.length} в колоде',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant),
           ),
           const SizedBox(height: AppSpacing.sm),
           Expanded(
             child: Center(
               child: ConstrainedBox(
-                constraints: BoxConstraints(maxWidth: maxCardWidth),
+                constraints: BoxConstraints(maxWidth: maxW),
                 child: GestureDetector(
                   onHorizontalDragUpdate: (d) => setState(() => _dragDx += d.delta.dx),
-                  onHorizontalDragEnd: (_) {
+                  onHorizontalDragEnd: (_) async {
                     if (_dragDx > 120) {
-                      _like(top);
+                      state.like(top);
+                      setState(() => _dragDx = 0);
                     } else if (_dragDx < -120) {
-                      _reject(top);
+                      final reason = await showRejectReasonSheet(context);
+                      if (!context.mounted) return;
+                      state.dislike(top, reason: reason);
+                      setState(() => _dragDx = 0);
                     } else {
                       setState(() => _dragDx = 0);
                     }
                   },
-                  onTap: () => context.push('/app/apartment/${top.id}'),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 60),
-                    curve: Curves.easeOut,
-                    child: Transform.translate(
-                      offset: Offset(_dragDx, 0),
-                      child: Transform.rotate(
-                        angle: _dragDx / 900,
-                        child: ApartmentSwipeCard(apartment: top, dragDx: _dragDx),
+                  onTap: () {
+                    state.viewDetail(top);
+                    context.push('/app/apartment/${top.id}');
+                  },
+                  child: Transform.translate(
+                    offset: Offset(_dragDx, 0),
+                    child: Transform.rotate(
+                      angle: _dragDx / 900,
+                      child: ApartmentSwipeCard(
+                        apartment: top,
+                        matchPercent: match,
+                        dragDx: _dragDx,
                       ),
                     ),
                   ),
@@ -132,21 +101,29 @@ class _SwipeDeckState extends State<SwipeDeck> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _RoundAction(
+              _Round(
                 icon: Icons.close_rounded,
                 label: 'Нет',
-                color: cs.error,
                 bg: cs.errorContainer,
-                onTap: () => _reject(top),
+                fg: cs.error,
+                onTap: () async {
+                  final reason = await showRejectReasonSheet(context);
+                  if (!context.mounted) return;
+                  state.dislike(top, reason: reason);
+                  setState(() => _dragDx = 0);
+                },
               ),
               const SizedBox(width: AppSpacing.xl),
-              _RoundAction(
+              _Round(
                 icon: Icons.favorite_rounded,
                 label: 'Да',
-                color: cs.onPrimary,
                 bg: cs.primary,
+                fg: cs.onPrimary,
                 large: true,
-                onTap: () => _like(top),
+                onTap: () {
+                  state.like(top);
+                  setState(() => _dragDx = 0);
+                },
               ),
             ],
           ),
@@ -156,20 +133,20 @@ class _SwipeDeckState extends State<SwipeDeck> {
   }
 }
 
-class _RoundAction extends StatelessWidget {
-  const _RoundAction({
+class _Round extends StatelessWidget {
+  const _Round({
     required this.icon,
     required this.label,
-    required this.color,
     required this.bg,
+    required this.fg,
     required this.onTap,
     this.large = false,
   });
 
   final IconData icon;
   final String label;
-  final Color color;
   final Color bg;
+  final Color fg;
   final VoidCallback onTap;
   final bool large;
 
@@ -181,14 +158,13 @@ class _RoundAction extends StatelessWidget {
         Material(
           color: bg,
           shape: const CircleBorder(),
-          elevation: 0,
           child: InkWell(
             customBorder: const CircleBorder(),
             onTap: onTap,
             child: SizedBox(
               width: size,
               height: size,
-              child: Icon(icon, color: color, size: large ? 30 : 26),
+              child: Icon(icon, color: fg, size: large ? 30 : 26),
             ),
           ),
         ),

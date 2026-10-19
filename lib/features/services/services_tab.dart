@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/l10n/app_strings.dart';
 import '../../core/theme/app_theme.dart';
@@ -8,16 +9,16 @@ class ServicesTab extends StatelessWidget {
   const ServicesTab({super.key});
 
   static const _services = [
-    (S.svcMortgageCalc, Icons.calculate_outlined, true),
-    (S.svcCompare, Icons.compare_arrows_outlined, true),
-    (S.svcUploadDocs, Icons.upload_file_outlined, false),
-    (S.svcOnlineMortgage, Icons.account_balance_outlined, false),
-    (S.svcEdeal, Icons.draw_outlined, false),
-    (S.svcFavorites, Icons.favorite_outline, true),
-    (S.svcDocCheck, Icons.fact_check_outlined, false),
-    (S.svcTrading, Icons.swap_horiz_outlined, false),
-    (S.svcProfile, Icons.person_outline, true),
-    (S.svcSupport, Icons.support_agent_outlined, true),
+    (S.svcMortgageCalc, Icons.calculate_outlined, 'mortgage'),
+    (S.svcCompare, Icons.compare_arrows_outlined, 'compare'),
+    (S.svcUploadDocs, Icons.upload_file_outlined, 'docs'),
+    (S.svcOnlineMortgage, Icons.account_balance_outlined, 'online-mortgage'),
+    (S.svcEdeal, Icons.draw_outlined, 'edeal'),
+    (S.svcFavorites, Icons.favorite_outline, 'favorites'),
+    (S.svcDocCheck, Icons.fact_check_outlined, 'doc-check'),
+    (S.svcTrading, Icons.swap_horiz_outlined, 'trading'),
+    (S.svcProfile, Icons.person_outline, 'profile'),
+    (S.svcSupport, Icons.support_agent_outlined, 'support'),
   ];
 
   @override
@@ -32,71 +33,51 @@ class ServicesTab extends StatelessWidget {
         SliverToBoxAdapter(
           child: ContentWidth(
             maxWidth: AppSpacing.maxWideWidth,
-            child: Padding(
-              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-              child: Text(
-                'Инструменты до сделки — ипотека, документы, сравнение',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: cs.onSurfaceVariant,
-                    ),
-              ),
+            child: Text(
+              'Откройте сервис — рабочие экраны с демо-логикой',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
             ),
           ),
         ),
         SliverPadding(
-          padding: const EdgeInsets.fromLTRB(AppSpacing.md, 0, AppSpacing.md, AppSpacing.xl),
-          sliver: SliverLayoutBuilder(
-            builder: (context, constraints) {
-              return SliverGrid(
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: cross,
-                  mainAxisSpacing: AppSpacing.sm,
-                  crossAxisSpacing: AppSpacing.sm,
-                  childAspectRatio: 1.05,
-                ),
-                delegate: SliverChildBuilderDelegate(
-                  (context, i) {
-                    final s = _services[i];
-                    return SurfaceCard(
-                      onTap: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('${s.$1} — ${S.comingSoon}')),
-                        );
-                      },
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            width: 44,
-                            height: 44,
-                            decoration: BoxDecoration(
-                              color: cs.primaryContainer,
-                              borderRadius: BorderRadius.circular(AppRadii.md),
-                            ),
-                            child: Icon(s.$2, color: cs.onPrimaryContainer),
-                          ),
-                          const Spacer(),
-                          Text(
-                            s.$1,
-                            style: Theme.of(context).textTheme.titleSmall,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            s.$3 ? 'Скоро · MVP' : S.comingSoon,
-                            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                  color: cs.onSurfaceVariant,
-                                ),
-                          ),
-                        ],
+          padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.sm, AppSpacing.md, AppSpacing.xl),
+          sliver: SliverGrid(
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: cross,
+              mainAxisSpacing: AppSpacing.sm,
+              crossAxisSpacing: AppSpacing.sm,
+              childAspectRatio: 1.05,
+            ),
+            delegate: SliverChildBuilderDelegate(
+              (context, i) {
+                final s = _services[i];
+                return SurfaceCard(
+                  onTap: () => context.push('/app/services/${s.$3}'),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: cs.primaryContainer,
+                          borderRadius: BorderRadius.circular(AppRadii.md),
+                        ),
+                        child: Icon(s.$2, color: cs.onPrimaryContainer),
                       ),
-                    );
-                  },
-                  childCount: _services.length,
-                ),
-              );
-            },
+                      const Spacer(),
+                      Text(s.$1, style: Theme.of(context).textTheme.titleSmall, maxLines: 2),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Открыть',
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(color: cs.primary),
+                      ),
+                    ],
+                  ),
+                );
+              },
+              childCount: _services.length,
+            ),
           ),
         ),
       ],

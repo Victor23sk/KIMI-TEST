@@ -4,6 +4,7 @@ import '../../core/l10n/app_strings.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/brand_mark.dart';
 import '../../models/apartment.dart';
+import '../../state/app_state.dart';
 
 class ApartmentDetailScreen extends StatelessWidget {
   const ApartmentDetailScreen({super.key, required this.apartment});
@@ -12,6 +13,8 @@ class ApartmentDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final state = AppScope.of(context);
+    final match = state.active.matchPercent(apartment);
     final cs = Theme.of(context).colorScheme;
 
     return Scaffold(
@@ -21,12 +24,12 @@ class ApartmentDetailScreen extends StatelessWidget {
             title: Text(apartment.zhkName),
             actions: [
               IconButton(
-                icon: const Icon(Icons.share_outlined),
-                onPressed: () {},
-              ),
-              IconButton(
-                icon: const Icon(Icons.favorite_border_rounded),
-                onPressed: () {},
+                icon: Icon(
+                  state.favoriteIds.contains(apartment.id)
+                      ? Icons.favorite_rounded
+                      : Icons.favorite_border_rounded,
+                ),
+                onPressed: () => state.like(apartment),
               ),
             ],
           ),
@@ -35,91 +38,86 @@ class ApartmentDetailScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  AspectRatio(
-                    aspectRatio: 4 / 3,
-                    child: Material(
-                      color: cs.primaryContainer,
-                      borderRadius: BorderRadius.circular(AppRadii.lg),
-                      clipBehavior: Clip.antiAlias,
-                      child: Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          CustomPaint(
-                            painter: _DetailPlanPainter(
-                              wall: cs.onPrimaryContainer.withValues(alpha: 0.4),
-                              fill: cs.surface.withValues(alpha: 0.3),
-                            ),
-                          ),
-                          Positioned(
-                            left: 12,
-                            bottom: 12,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                              decoration: BoxDecoration(
-                                color: cs.surface.withValues(alpha: 0.9),
-                                borderRadius: BorderRadius.circular(AppRadii.sm),
-                              ),
-                              child: Text(
-                                'Планировка · заглушка',
-                                style: Theme.of(context).textTheme.labelLarge,
-                              ),
-                            ),
-                          ),
-                        ],
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(AppRadii.lg),
+                    child: AspectRatio(
+                      aspectRatio: 4 / 3,
+                      child: Image.asset(
+                        apartment.planAsset,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, _, _) => ColoredBox(color: cs.primaryContainer),
                       ),
                     ),
                   ),
-                  const SizedBox(height: AppSpacing.md),
-                  Text(apartment.priceLabel, style: Theme.of(context).textTheme.headlineMedium),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: AppSpacing.sm),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(AppRadii.lg),
+                    child: AspectRatio(
+                      aspectRatio: 16 / 9,
+                      child: Image.asset(
+                        apartment.zhkAsset,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, _, _) => ColoredBox(color: cs.secondaryContainer),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
                   Text(
-                    '${apartment.areaM2} ${S.m2} · этаж ${apartment.floor} · ${apartment.district}',
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    'Планировка · фасад ЖК',
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
                           color: cs.onSurfaceVariant,
                         ),
                   ),
                   const SizedBox(height: AppSpacing.md),
-                  _MatchBanner(percent: apartment.matchPercent),
+                  Text(apartment.priceLabel, style: Theme.of(context).textTheme.headlineMedium),
+                  Text(
+                    '${apartment.areaM2} ${S.m2} · этаж ${apartment.floor} · ${apartment.district} · метро ${apartment.metroMin} мин',
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: cs.onSurfaceVariant),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  SurfaceCard(
+                    color: cs.secondaryContainer,
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(S.matchPercent, style: Theme.of(context).textTheme.titleSmall),
+                              Text('$match%', style: Theme.of(context).textTheme.headlineMedium),
+                            ],
+                          ),
+                        ),
+                        SizedBox(
+                          width: 64,
+                          height: 64,
+                          child: CircularProgressIndicator(
+                            value: match / 100,
+                            strokeWidth: 7,
+                            color: cs.primary,
+                            backgroundColor: cs.surface.withValues(alpha: 0.4),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                   const SizedBox(height: AppSpacing.lg),
                   Text('Аналитика', style: Theme.of(context).textTheme.titleLarge),
                   const SizedBox(height: AppSpacing.sm),
-                  _AnalyticsTile(
-                    icon: Icons.price_change_outlined,
-                    title: S.priceAnalytics,
-                    body: 'Динамика цены и цена м² vs. соседи по ЖК — данные скоро.',
-                  ),
-                  _AnalyticsTile(
-                    icon: Icons.directions_subway_outlined,
-                    title: S.transport,
-                    body: 'Метро, МЦК/МЦД, авто — кэш аналитики.',
-                  ),
-                  _AnalyticsTile(
-                    icon: Icons.park_outlined,
-                    title: S.ecology,
-                    body: 'Индекс экологии района — источник и дата обновления.',
-                  ),
-                  _AnalyticsTile(
-                    icon: Icons.shield_outlined,
-                    title: S.crime,
-                    body: 'Индикаторы безопасности — с дисклеймером.',
-                  ),
-                  _AnalyticsTile(
-                    icon: Icons.school_outlined,
-                    title: S.schools,
-                    body: 'Школы и детские сады в радиусе.',
-                  ),
-                  _AnalyticsTile(
-                    icon: Icons.storefront_outlined,
-                    title: S.infrastructure,
-                    body: 'Парки, клиники, ритейл.',
-                  ),
+                  _Tile(Icons.price_change_outlined, S.priceAnalytics, 'Цена м² и динамика — демо-заглушка'),
+                  _Tile(Icons.directions_subway_outlined, S.transport, 'Метро ${apartment.metroMin} мин · МЦК рядом'),
+                  _Tile(Icons.park_outlined, S.ecology, 'Индекс экологии района — демо'),
+                  _Tile(Icons.shield_outlined, S.crime, 'Безопасность — с дисклеймером'),
+                  _Tile(Icons.school_outlined, S.schools, 'Школы и сады в радиусе 1 км'),
+                  _Tile(Icons.storefront_outlined, S.infrastructure, 'Ритейл, клиники, парки'),
                   const SizedBox(height: AppSpacing.md),
                   FilledButton.icon(
                     onPressed: () {
+                      state.leaveLead(apartment);
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text(
-                            '${S.leaveLead} · TQS маршрутизация по бандам',
+                            '${S.leaveLead}: TQS ${state.tqs.round()} (${state.tqsBand})',
                           ),
                         ),
                       );
@@ -138,73 +136,8 @@ class ApartmentDetailScreen extends StatelessWidget {
   }
 }
 
-class _MatchBanner extends StatelessWidget {
-  const _MatchBanner({required this.percent});
-
-  final int percent;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return SurfaceCard(
-      color: cs.secondaryContainer,
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  S.matchPercent,
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        color: cs.onSecondaryContainer,
-                      ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '$percent%',
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        color: cs.onSecondaryContainer,
-                      ),
-                ),
-              ],
-            ),
-          ),
-          SizedBox(
-            width: 64,
-            height: 64,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                CircularProgressIndicator(
-                  value: percent / 100,
-                  strokeWidth: 7,
-                  color: cs.primary,
-                  backgroundColor: cs.surface.withValues(alpha: 0.45),
-                ),
-                Text(
-                  '$percent',
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        color: cs.onSecondaryContainer,
-                        fontWeight: FontWeight.w800,
-                      ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _AnalyticsTile extends StatelessWidget {
-  const _AnalyticsTile({
-    required this.icon,
-    required this.title,
-    required this.body,
-  });
-
+class _Tile extends StatelessWidget {
+  const _Tile(this.icon, this.title, this.body);
   final IconData icon;
   final String title;
   final String body;
@@ -216,13 +149,12 @@ class _AnalyticsTile extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: AppSpacing.sm),
       child: SurfaceCard(
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: cs.primaryContainer.withValues(alpha: 0.7),
+                color: cs.primaryContainer,
                 borderRadius: BorderRadius.circular(AppRadii.sm),
               ),
               child: Icon(icon, size: 20, color: cs.onPrimaryContainer),
@@ -233,14 +165,7 @@ class _AnalyticsTile extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(title, style: Theme.of(context).textTheme.titleSmall),
-                  const SizedBox(height: 2),
-                  Text(
-                    body,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: cs.onSurfaceVariant,
-                          height: 1.35,
-                        ),
-                  ),
+                  Text(body, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant)),
                 ],
               ),
             ),
@@ -249,33 +174,4 @@ class _AnalyticsTile extends StatelessWidget {
       ),
     );
   }
-}
-
-/// Local plan painter for detail (avoids exporting private painter).
-class _DetailPlanPainter extends CustomPainter {
-  _DetailPlanPainter({required this.wall, required this.fill});
-
-  final Color wall;
-  final Color fill;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = wall
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.2;
-    final fillPaint = Paint()
-      ..color = fill
-      ..style = PaintingStyle.fill;
-    final inset = size.shortestSide * 0.12;
-    final rect = Rect.fromLTWH(inset, inset, size.width - inset * 2, size.height - inset * 2);
-    final r = RRect.fromRectAndRadius(rect, const Radius.circular(12));
-    canvas.drawRRect(r, fillPaint);
-    canvas.drawRRect(r, paint);
-    canvas.drawLine(Offset(rect.left + rect.width * 0.4, rect.top), Offset(rect.left + rect.width * 0.4, rect.bottom), paint);
-    canvas.drawLine(Offset(rect.left, rect.top + rect.height * 0.55), Offset(rect.left + rect.width * 0.4, rect.top + rect.height * 0.55), paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant _DetailPlanPainter oldDelegate) => false;
 }

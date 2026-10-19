@@ -43,7 +43,7 @@ class BrandMark extends StatelessWidget {
                     ? Theme.of(context).textTheme.headlineSmall
                     : Theme.of(context).textTheme.titleMedium)
                 ?.copyWith(
-              color: cs.tertiary,
+              color: cs.secondary,
               fontWeight: FontWeight.w700,
               letterSpacing: 1.2,
             ),

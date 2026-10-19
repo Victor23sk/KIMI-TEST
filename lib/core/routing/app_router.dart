@@ -4,6 +4,12 @@ import 'package:go_router/go_router.dart';
 import '../../features/apartment/apartment_detail_screen.dart';
 import '../../features/auth/auth_screen.dart';
 import '../../features/onboarding/onboarding_screen.dart';
+import '../../features/services/screens/compare_screen.dart';
+import '../../features/services/screens/docs_screen.dart';
+import '../../features/services/screens/favorites_screen.dart';
+import '../../features/services/screens/mortgage_screen.dart';
+import '../../features/services/screens/profile_screen.dart';
+import '../../features/services/screens/stub_service_screen.dart';
 import '../../features/shell/main_shell.dart';
 import '../../features/splash/splash_screen.dart';
 import '../../models/apartment.dart';
@@ -13,7 +19,6 @@ abstract final class AppRoutes {
   static const onboarding = '/intro';
   static const auth = '/auth';
   static const home = '/app';
-  static const apartment = '/app/apartment/:id';
 }
 
 final GoRouter appRouter = GoRouter(
@@ -54,17 +59,39 @@ final GoRouter appRouter = GoRouter(
         GoRoute(
           path: 'apartment/:id',
           pageBuilder: (context, state) {
-            final id = state.pathParameters['id']!;
-            final apt = ApartmentPreview.demos.firstWhere(
-              (a) => a.id == id,
-              orElse: () => ApartmentPreview.demos.first,
-            );
+            final apt = ApartmentPreview.byId(state.pathParameters['id']!);
             return CustomTransitionPage(
               key: state.pageKey,
               child: ApartmentDetailScreen(apartment: apt),
               transitionsBuilder: _sharedAxis,
             );
           },
+        ),
+        GoRoute(
+          path: 'services/mortgage',
+          builder: (context, state) => const MortgageScreen(),
+        ),
+        GoRoute(
+          path: 'services/favorites',
+          builder: (context, state) => const FavoritesScreen(),
+        ),
+        GoRoute(
+          path: 'services/compare',
+          builder: (context, state) => const CompareScreen(),
+        ),
+        GoRoute(
+          path: 'services/docs',
+          builder: (context, state) => const DocsScreen(),
+        ),
+        GoRoute(
+          path: 'services/profile',
+          builder: (context, state) => const ProfileScreen(),
+        ),
+        GoRoute(
+          path: 'services/:slug',
+          builder: (context, state) => StubServiceScreen(
+            slug: state.pathParameters['slug']!,
+          ),
         ),
       ],
     ),
@@ -90,7 +117,7 @@ Widget _sharedAxis(
   Widget child,
 ) {
   final offset = Tween<Offset>(
-    begin: const Offset(0.05, 0),
+    begin: const Offset(0.04, 0),
     end: Offset.zero,
   ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic));
   return FadeTransition(

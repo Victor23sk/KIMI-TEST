@@ -3,60 +3,22 @@ import 'package:flutter/material.dart';
 import '../../core/l10n/app_strings.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/brand_mark.dart';
+import '../../state/app_state.dart';
+import 'sheets/outreach_sheets.dart';
 import 'widgets/filter_widgets.dart';
 import 'widgets/score_ball.dart';
 
-class AgentTab extends StatefulWidget {
+class AgentTab extends StatelessWidget {
   const AgentTab({super.key});
 
   @override
-  State<AgentTab> createState() => _AgentTabState();
-}
-
-class _AgentTabState extends State<AgentTab> {
-  String? _goal;
-  int _activeSearch = 0; // dual search index
-  RangeValues _budget = const RangeValues(12, 30);
-  RangeValues _area = const RangeValues(35, 70);
-  final Set<int> _rooms = {1, 2};
-  double _metroMin = 15;
-  final Set<String> _districts = {'САО'};
-  String _finishing = 'whitebox';
-
-  final _timeline = <_TimelineItem>[
-    _TimelineItem('Система', 'Сессия поиска A создана', Icons.play_arrow_rounded),
-  ];
-
-  void _setGoal(String goal) {
-    setState(() {
-      _goal = goal;
-      _timeline.add(
-        _TimelineItem(
-          'Вы',
-          goal == 'living' ? 'Цель: жить' : 'Цель: инвестировать',
-          Icons.flag_rounded,
-        ),
-      );
-      _timeline.add(
-        _TimelineItem(
-          'Агент',
-          goal == 'living'
-              ? 'Спрошу про семью, маршрут до работы и школы рядом.'
-              : 'Спрошу про горизонт, доходность и ликвидность района.',
-          Icons.auto_awesome_rounded,
-        ),
-      );
-    });
-  }
-
-  void _toast(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final state = AppScope.of(context);
+    final s = state.active;
     final cs = Theme.of(context).colorScheme;
     final wide = MediaQuery.sizeOf(context).width >= 900;
+    final filters = s.filters;
+    final prob = s.probability();
 
     return CustomScrollView(
       slivers: [
@@ -65,23 +27,19 @@ class _AgentTabState extends State<AgentTab> {
           actions: [
             IconButton(
               tooltip: S.clearHistory,
-              onPressed: () => _toast('${S.clearHistory} (заглушка)'),
+              onPressed: state.clearHistory,
               icon: const Icon(Icons.delete_outline_rounded),
             ),
             IconButton(
               tooltip: S.newSearch,
-              onPressed: () => _toast('${S.newSearch} (заглушка)'),
+              onPressed: state.newSearch,
               icon: const Icon(Icons.add_circle_outline_rounded),
             ),
             IconButton(
               tooltip: S.parallelSearch,
-              onPressed: () {
-                setState(() => _activeSearch = _activeSearch == 0 ? 1 : 0);
-                _toast('${S.parallelSearch}: ${_activeSearch == 0 ? 'A' : 'B'}');
-              },
+              onPressed: () => state.selectSearch(state.activeIndex == 0 ? 1 : 0),
               icon: const Icon(Icons.call_split_rounded),
             ),
-            const SizedBox(width: 4),
           ],
         ),
         SliverToBoxAdapter(
@@ -90,100 +48,105 @@ class _AgentTabState extends State<AgentTab> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _SearchSwitcher(
-                  active: _activeSearch,
-                  onChanged: (i) => setState(() => _activeSearch = i),
+                SegmentedButton<int>(
+                  segments: [
+                    ButtonSegment(
+                      value: 0,
+                      label: Text(state.sessions[0].title),
+                      icon: const Icon(Icons.search_rounded, size: 18),
+                    ),
+                    ButtonSegment(
+                      value: 1,
+                      label: Text(state.sessions[1].title),
+                      icon: const Icon(Icons.layers_outlined, size: 18),
+                    ),
+                  ],
+                  selected: {state.activeIndex},
+                  onSelectionChanged: (v) => state.selectSearch(v.first),
                 ),
                 const SizedBox(height: AppSpacing.md),
                 if (wide)
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(flex: 5, child: _buildScoreAndProb(cs)),
+                      Expanded(flex: 5, child: _ScoreBlock(state: state, prob: prob)),
                       const SizedBox(width: AppSpacing.md),
-                      Expanded(flex: 6, child: _buildChat(cs)),
+                      Expanded(flex: 6, child: _ChatBlock(state: state)),
                     ],
                   )
                 else ...[
-                  _buildScoreAndProb(cs),
+                  _ScoreBlock(state: state, prob: prob),
                   const SizedBox(height: AppSpacing.md),
-                  _buildChat(cs),
+                  _ChatBlock(state: state),
                 ],
                 const SizedBox(height: AppSpacing.lg),
                 Text(S.filters, style: Theme.of(context).textTheme.titleMedium),
-                const SizedBox(height: AppSpacing.xs),
+                const SizedBox(height: 4),
                 Text(
-                  'Каждый фильтр — отдельный виджет, изменения попадают в историю',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: cs.onSurfaceVariant,
-                      ),
+                  'Изменения сразу влияют на колоду в «Поиске» и вероятности',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant),
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 FilterSectionCard(
                   title: S.budget,
                   icon: Icons.payments_outlined,
                   child: BudgetRangeFilter(
-                    values: _budget,
-                    onChanged: (v) => setState(() => _budget = v),
+                    values: RangeValues(filters.budget.start, filters.budget.end),
+                    onChanged: (v) => state.updateBudget(v.start, v.end, commit: false),
+                    onChangeEnd: (v) => state.updateBudget(v.start, v.end),
                   ),
                 ),
                 FilterSectionCard(
                   title: S.area,
                   icon: Icons.square_foot_outlined,
                   child: AreaRangeFilter(
-                    values: _area,
-                    onChanged: (v) => setState(() => _area = v),
+                    values: RangeValues(filters.area.start, filters.area.end),
+                    onChanged: (v) => state.updateArea(v.start, v.end, commit: false),
+                    onChangeEnd: (v) => state.updateArea(v.start, v.end),
                   ),
                 ),
                 FilterSectionCard(
                   title: S.rooms,
                   icon: Icons.meeting_room_outlined,
                   child: RoomsChipFilter(
-                    selected: _rooms,
-                    onChanged: (v) => setState(() {
-                      _rooms
-                        ..clear()
-                        ..addAll(v);
-                    }),
+                    selected: filters.rooms,
+                    onChanged: state.updateRooms,
                   ),
                 ),
                 FilterSectionCard(
                   title: S.metro,
                   icon: Icons.directions_subway_outlined,
                   child: MetroSliderFilter(
-                    minutes: _metroMin,
-                    onChanged: (v) => setState(() => _metroMin = v),
+                    minutes: filters.metroMin,
+                    onChanged: (v) => state.updateMetro(v, commit: false),
+                    onChangeEnd: state.updateMetro,
                   ),
                 ),
                 FilterSectionCard(
                   title: S.districts,
                   icon: Icons.map_outlined,
                   child: DistrictChipFilter(
-                    selected: _districts,
-                    onChanged: (v) => setState(() {
-                      _districts
-                        ..clear()
-                        ..addAll(v);
-                    }),
+                    selected: filters.districts,
+                    onChanged: state.updateDistricts,
                   ),
                 ),
                 FilterSectionCard(
                   title: S.finishing,
                   icon: Icons.home_repair_service_outlined,
                   child: FinishingSegmentFilter(
-                    value: _finishing,
-                    onChanged: (v) => setState(() => _finishing = v),
+                    value: filters.finishing,
+                    onChanged: state.updateFinishing,
                   ),
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 FilledButton.icon(
-                  onPressed: () => _toast('${S.proposePrice} (заглушка)'),
+                  onPressed: () => showPriceOfferSheet(context),
                   icon: const Icon(Icons.sell_outlined),
                   label: const Text(S.proposePrice),
                 ),
                 const SizedBox(height: AppSpacing.xs),
                 OutlinedButton.icon(
-                  onPressed: () => _toast('${S.massOutreach} (заглушка)'),
+                  onPressed: () => showMassOutreachSheet(context),
                   icon: const Icon(Icons.campaign_outlined),
                   label: const Text(S.massOutreach),
                 ),
@@ -195,26 +158,33 @@ class _AgentTabState extends State<AgentTab> {
       ],
     );
   }
+}
 
-  Widget _buildScoreAndProb(ColorScheme cs) {
+class _ScoreBlock extends StatelessWidget {
+  const _ScoreBlock({required this.state, required this.prob});
+
+  final AppState state;
+  final Map<String, double> prob;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Column(
       children: [
         SurfaceCard(
-          padding: const EdgeInsets.all(AppSpacing.md),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const ScoreBall(score: 62),
+                  ScoreBall(score: state.tqs, bandLabel: state.tqsBand),
                   const SizedBox(width: AppSpacing.md),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(S.scoreBall, style: Theme.of(context).textTheme.titleMedium),
-                        const SizedBox(height: 2),
                         Text(
                           S.scoreTqsHint,
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -224,86 +194,124 @@ class _AgentTabState extends State<AgentTab> {
                         const SizedBox(height: AppSpacing.sm),
                         Text(
                           S.raiseScore,
-                          style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                                color: cs.primary,
-                              ),
+                          style: Theme.of(context).textTheme.labelLarge?.copyWith(color: cs.primary),
                         ),
                         const SizedBox(height: 6),
-                        const RaiseScoreActions(
-                          actions: [
-                            'Откройте 2–3 планировки (+15 OSAS каждая)',
-                            'Добавьте в избранное (+20)',
-                            'Укажите конкретный ЖК в заявке (LQS до +30)',
-                          ],
-                        ),
+                        RaiseScoreActions(actions: state.raiseActions),
                       ],
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: AppSpacing.md),
-              const Divider(),
-              const SizedBox(height: AppSpacing.sm),
-              _TqsMeters(pcqs: 70, bpsQuality: 96, osas: 48, lqs: 40),
+              const Divider(height: 24),
+              _Meter(S.scoreComponentPcqs, state.pcqs, 0.25),
+              _Meter(S.scoreComponentBps, state.bpsQuality, 0.20),
+              _Meter(S.scoreComponentOsas, (state.osas + 18).clamp(0, 100), 0.35),
+              _Meter(S.scoreComponentLqs, state.lqs, 0.20),
             ],
           ),
         ),
         const SizedBox(height: AppSpacing.sm),
         SurfaceCard(
-          padding: const EdgeInsets.all(AppSpacing.md),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(S.probability, style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: AppSpacing.sm),
-              const _ProbRow(label: S.inventoryFit, value: 0.62),
-              const _ProbRow(label: S.competition, value: 0.41),
-              const _ProbRow(label: S.budgetRealism, value: 0.78),
+              _Prob(S.inventoryFit, prob['inventoryFit']!),
+              _Prob(S.competition, prob['competition']!),
+              _Prob(S.budgetRealism, prob['budgetRealism']!),
+              Text(
+                'По текущим фильтрам: ${state.active.filteredCatalog().length} лотов в колоде',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+              ),
             ],
           ),
         ),
       ],
     );
   }
+}
 
-  Widget _buildChat(ColorScheme cs) {
+class _ChatBlock extends StatelessWidget {
+  const _ChatBlock({required this.state});
+
+  final AppState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = state.active;
+    final cs = Theme.of(context).colorScheme;
     return SurfaceCard(
-      padding: const EdgeInsets.all(AppSpacing.md),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(S.timeline, style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: AppSpacing.xs),
-          ..._timeline.map((e) => _TimelineTile(item: e)),
-          if (_goal == null) ...[
+          ...s.timeline.reversed.take(12).map((e) {
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  CircleAvatar(
+                    radius: 14,
+                    backgroundColor: cs.primaryContainer,
+                    child: Icon(Icons.circle, size: 8, color: cs.onPrimaryContainer),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(e.actor, style: Theme.of(context).textTheme.labelLarge),
+                        Text(
+                          e.text,
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: cs.onSurfaceVariant,
+                              ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+          if (s.goal == null) ...[
             const SizedBox(height: AppSpacing.sm),
-            _AgentBubble(text: S.agentWelcome),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: cs.secondaryContainer,
+                borderRadius: BorderRadius.circular(AppRadii.lg),
+              ),
+              child: Text(
+                S.agentWelcome,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: cs.onSecondaryContainer,
+                    ),
+              ),
+            ),
             const SizedBox(height: AppSpacing.sm),
             Row(
               children: [
                 Expanded(
                   child: FilledButton.tonalIcon(
-                    onPressed: () => _setGoal('living'),
+                    onPressed: () => state.setGoal('living'),
                     icon: const Icon(Icons.home_outlined),
                     label: const Text(S.goalLiving),
                   ),
                 ),
-                const SizedBox(width: AppSpacing.sm),
+                const SizedBox(width: 8),
                 Expanded(
                   child: FilledButton.tonalIcon(
-                    onPressed: () => _setGoal('investor'),
+                    onPressed: () => state.setGoal('investor'),
                     icon: const Icon(Icons.trending_up_rounded),
                     label: const Text(S.goalInvestor),
                   ),
                 ),
               ],
-            ),
-          ] else ...[
-            const SizedBox(height: AppSpacing.sm),
-            _AgentBubble(
-              text: _goal == 'living'
-                  ? 'Отлично. Настроим фильтры под жизнь в городе.'
-                  : 'Отлично. Настроим фильтры под инвестиционный сценарий.',
             ),
           ],
         ],
@@ -312,103 +320,28 @@ class _AgentTabState extends State<AgentTab> {
   }
 }
 
-class _SearchSwitcher extends StatelessWidget {
-  const _SearchSwitcher({required this.active, required this.onChanged});
-
-  final int active;
-  final ValueChanged<int> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return SegmentedButton<int>(
-      segments: const [
-        ButtonSegment(value: 0, label: Text('Поиск A'), icon: Icon(Icons.search_rounded, size: 18)),
-        ButtonSegment(value: 1, label: Text('Поиск B'), icon: Icon(Icons.layers_outlined, size: 18)),
-      ],
-      selected: {active},
-      onSelectionChanged: (s) => onChanged(s.first),
-    );
-  }
-}
-
-class _TqsMeters extends StatelessWidget {
-  const _TqsMeters({
-    required this.pcqs,
-    required this.bpsQuality,
-    required this.osas,
-    required this.lqs,
-  });
-
-  final double pcqs;
-  final double bpsQuality;
-  final double osas;
-  final double lqs;
-
-  @override
-  Widget build(BuildContext context) {
-    final items = [
-      (S.scoreComponentPcqs, pcqs, 0.25),
-      (S.scoreComponentBps, bpsQuality, 0.20),
-      (S.scoreComponentOsas, osas, 0.35),
-      (S.scoreComponentLqs, lqs, 0.20),
-    ];
-    return Column(
-      children: items.map((e) {
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 8),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(e.$1, style: Theme.of(context).textTheme.bodySmall),
-                  ),
-                  Text(
-                    '${e.$2.round()} · ${(e.$3 * 100).round()}%',
-                    style: Theme.of(context).textTheme.labelMedium,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 4),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(99),
-                child: LinearProgressIndicator(
-                  value: e.$2 / 100,
-                  minHeight: 6,
-                ),
-              ),
-            ],
-          ),
-        );
-      }).toList(),
-    );
-  }
-}
-
-class _ProbRow extends StatelessWidget {
-  const _ProbRow({required this.label, required this.value});
-
+class _Meter extends StatelessWidget {
+  const _Meter(this.label, this.value, this.weight);
   final String label;
   final double value;
+  final double weight;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.only(bottom: 8),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Expanded(child: Text(label, style: Theme.of(context).textTheme.bodyMedium)),
-              Text('${(value * 100).round()}%'),
+              Expanded(child: Text(label, style: Theme.of(context).textTheme.bodySmall)),
+              Text('${value.round()} · ${(weight * 100).round()}%'),
             ],
           ),
           const SizedBox(height: 4),
           ClipRRect(
             borderRadius: BorderRadius.circular(99),
-            child: LinearProgressIndicator(value: value, minHeight: 6),
+            child: LinearProgressIndicator(value: (value / 100).clamp(0, 1), minHeight: 6),
           ),
         ],
       ),
@@ -416,84 +349,27 @@ class _ProbRow extends StatelessWidget {
   }
 }
 
-class _AgentBubble extends StatelessWidget {
-  const _AgentBubble({required this.text});
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width * 0.9),
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: cs.secondaryContainer,
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(4),
-              topRight: Radius.circular(18),
-              bottomLeft: Radius.circular(18),
-              bottomRight: Radius.circular(18),
-            ),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            child: Text(
-              text,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: cs.onSecondaryContainer,
-                    height: 1.4,
-                  ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _TimelineItem {
-  _TimelineItem(this.actor, this.text, this.icon);
-
-  final String actor;
-  final String text;
-  final IconData icon;
-}
-
-class _TimelineTile extends StatelessWidget {
-  const _TimelineTile({required this.item});
-
-  final _TimelineItem item;
+class _Prob extends StatelessWidget {
+  const _Prob(this.label, this.value);
+  final String label;
+  final double value;
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Column(
         children: [
-          CircleAvatar(
-            radius: 16,
-            backgroundColor: cs.primaryContainer,
-            child: Icon(item.icon, size: 16, color: cs.onPrimaryContainer),
+          Row(
+            children: [
+              Expanded(child: Text(label)),
+              Text('${(value * 100).round()}%'),
+            ],
           ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(item.actor, style: Theme.of(context).textTheme.labelLarge),
-                Text(
-                  item.text,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: cs.onSurfaceVariant,
-                      ),
-                ),
-              ],
-            ),
+          const SizedBox(height: 4),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(99),
+            child: LinearProgressIndicator(value: value, minHeight: 6),
           ),
         ],
       ),
