@@ -1,0 +1,13 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='900' viewBox='0 0 1200 900'>
+<rect width='1200' height='900' fill='#f4f0fa'/>
+<rect x='80' y='80' width='1040' height='740' fill='none' stroke='#4A148C' stroke-width='8'/>
+<line x1='480' y1='80' x2='480' y2='820' stroke='#4A148C' stroke-width='6'/>
+<line x1='80' y1='420' x2='480' y2='420' stroke='#4A148C' stroke-width='6'/>
+<line x1='480' y1='320' x2='1120' y2='320' stroke='#4A148C' stroke-width='6'/>
+<text x='200' y='270' font-family='Arial' font-size='36' fill='#6A1B9A'>Кухня-гостиная</text>
+<text x='180' y='640' font-family='Arial' font-size='36' fill='#6A1B9A'>Спальня</text>
+<text x='700' y='220' font-family='Arial' font-size='36' fill='#6A1B9A'>Холл</text>
+<text x='700' y='560' font-family='Arial' font-size='36' fill='#6A1B9A'>С/у · гардероб</text>
+<text x='80' y='50' font-family='Arial' font-size='28' fill='#7E57C2'>Планировка · 42.5 м² · 1-комн.</text>
+</svg>

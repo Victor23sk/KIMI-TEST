@@ -1,0 +1,13 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='900' viewBox='0 0 1200 900'>
+<rect width='1200' height='900' fill='#f5f0ff'/>
+<rect x='90' y='90' width='1020' height='720' fill='none' stroke='#311B92' stroke-width='8'/>
+<line x1='90' y1='360' x2='1110' y2='360' stroke='#311B92' stroke-width='6'/>
+<line x1='520' y1='360' x2='520' y2='810' stroke='#311B92' stroke-width='6'/>
+<line x1='820' y1='360' x2='820' y2='810' stroke='#311B92' stroke-width='6'/>
+<text x='430' y='240' font-family='Arial' font-size='36' fill='#512DA8'>Евро-гостиная</text>
+<text x='200' y='620' font-family='Arial' font-size='34' fill='#512DA8'>Спальня 1</text>
+<text x='580' y='620' font-family='Arial' font-size='34' fill='#512DA8'>Спальня 2</text>
+<text x='880' y='620' font-family='Arial' font-size='34' fill='#512DA8'>С/у</text>
+<text x='90' y='60' font-family='Arial' font-size='28' fill='#7E57C2'>Планировка · 71 м² · 2-комн.</text>
+</svg>
